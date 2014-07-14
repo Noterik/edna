@@ -1,0 +1,257 @@
+package org.springfield.edna.restlet;
+
+import java.awt.AlphaComposite;
+import java.io.File;
+import org.apache.log4j.Logger;
+import org.restlet.Request;
+import org.restlet.data.Form;
+import org.restlet.data.MediaType;
+import org.restlet.data.Reference;
+import org.restlet.data.Status;
+import org.restlet.representation.FileRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.resource.Get;
+import org.restlet.resource.ServerResource;
+import org.springfield.edna.GlobalConfig;
+import org.springfield.edna.im.ImageManipulationGlobal;
+import org.springfield.edna.im.ImageManipulationReceiverFactory;
+import org.springfield.edna.im.NamingConvention;
+import org.springfield.edna.restlet.EdnaResource;
+
+public class EdnaResource extends ServerResource  {
+	/** the EdnaResource's log4j Logger */
+	private static final Logger LOG = Logger.getLogger(EdnaResource.class);
+	
+	/**
+	 * Called right after constructor of this resource (every request)
+	 */
+	@Override
+	public void doInit() {
+		LOG.info("doInit");
+	}
+	
+	/**
+	 * Test get
+	 * 
+	 * @param rep
+	 * @return
+	 */
+	@Get
+	public Representation getTest(Representation rep) {	
+		LOG.debug("Received an image request ");
+		
+		
+		
+		// get request and query form
+		Request request = getRequest();
+		Reference ref =  request.getResourceRef();
+		Form form = ref.getQueryAsForm();
+		String query = form.getQueryString();
+		String[] querySplit = query.split("=");
+		String queryFun = querySplit[0];
+		
+		// determine query parameters
+		String scale = form.getFirstValue("scale", true,  null);
+		String rAngle = form.getFirstValue("rotate", true, null);
+		String transparencyValue = form.getFirstValue("transparent", true,  null);
+		String cropValues = form.getFirstValue("crop", true,  null);
+		String compress = form.getFirstValue("compress", true, null);
+		String adjust = form.getFirstValue("adjust", true, null);
+		String verbose = form.getFirstValue("verbose", true, null);
+		String imPath = ref.getPath().substring("/edna/".length());
+		
+		Boolean error = false;
+		
+		// build manipulation parameter object
+		ImageManipulationGlobal imr1 = new ImageManipulationGlobal();
+		
+		//locate image
+		File inImg = new File (GlobalConfig.getInstance().IMAGE_PATH, imPath);
+		
+		//check if image exists 
+		if (!inImg.exists()) {
+			LOG.debug(inImg);
+			error = true;
+			LOG.error("No input image!");
+			
+			// send 404 error
+			getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+			return new StringRepresentation ("Image not found!");
+		}else{
+			//set parameters for input image 
+			imr1.setInputImage(inImg);
+		}
+		
+		// if correct image already in cache then load it from disk and return it
+		// if not generate and put it in cachedir and return it.
+		String outputname = NamingConvention.convertName(imr1);
+		System.out.println("WHOOOOOOOOO="+outputname);
+		File cachedImg = new File (outputname);
+		
+		//check if image exists 
+		if (cachedImg.exists()) {
+			System.out.println("ALREADY DONE IT");
+		} else {
+			System.out.println("NEED TO DO IT");
+		}
+
+		
+		//Method for scaling
+		if (scale != null){
+			if ((scale.isEmpty()) || (!scale.contains("x"))) {
+				error = true;
+				LOG.error("Invalid values for scaling");
+			} else if ((scale != "") && (scale.contains("x"))){
+				try {
+					String[] scaleSplit = scale.split("x");
+					String sWidth = scaleSplit[0];
+					String sHeight = scaleSplit[1];
+					int intWidth = Integer.parseInt(sWidth);
+					int intHeight = Integer.parseInt(sHeight);
+					imr1.scale(intWidth, intHeight);
+				} catch(Exception e) {
+					error = true;
+					LOG.error("Exception while determining scaling parameters",e);
+				}
+			}
+		}
+		
+		//Method for cropping
+		if (cropValues != null) {
+			if (!cropValues.contains("x")) {
+				error = true;
+				LOG.error("Invalid values for cropping");
+			} else if (cropValues != ""){
+				try {
+					String[] cropSplit = cropValues.split("x");
+					String cXco = cropSplit[0];
+					String cYco = cropSplit[1];
+					String cWidth = cropSplit[2];
+					String cHeight = cropSplit [3];
+					int x = Integer.parseInt(cXco);
+					int y = Integer.parseInt(cYco);
+					int w = Integer.parseInt(cWidth);
+					int h = Integer.parseInt(cHeight);
+					imr1.crop(x, y, w, h);
+				} catch(Exception e) {
+					error = true;
+					LOG.error("Exception while determining crop parameters",e);
+				}
+			}
+		}
+		
+		//Method for adjusting 
+		if (adjust != null){
+			if ((adjust.isEmpty()) || (!adjust.contains("x"))) {
+				error = true;
+				LOG.error("Invalid values for scaling");
+			} else if ((adjust != "") && (adjust.contains("x"))){
+				try {
+					String[] adjustSplit = adjust.split("x");
+					String aWidth = adjustSplit[0];
+					String aHeight = adjustSplit[1];
+					int intWidth = Integer.parseInt(aWidth);
+					int intHeight = Integer.parseInt(aHeight);
+					imr1.adjustLayout(intWidth, intHeight);
+				} catch(Exception e) {
+					error = true;
+					LOG.error("Exception while determining scaling parameters",e);
+				}
+			}
+		}
+			
+		//rotate Image
+		if (rAngle != null){
+			if (rAngle.isEmpty()) {
+				error = true;
+				LOG.error("Invalid values for rotating");
+			} else {
+				try {
+					int intAngle = Integer.parseInt(rAngle);
+					imr1.rotate(intAngle);
+				} catch(Exception e) {
+					error = true;
+					LOG.error("Exception while determining rotation parameters",e);
+				}
+			} 
+		}
+			
+		// make image transparent
+		if (transparencyValue != null){
+			if (transparencyValue.isEmpty()){
+				error = true;
+				LOG.error("Invalid transparency value");
+			} else{
+				try {
+					float val = Float.parseFloat(transparencyValue);
+					if (val > AlphaComposite.SRC_OVER || val < 0) {
+						error = true;
+						LOG.error("Invalid transparency value: value should be between 0 to 1");
+					} else{
+						imr1.transparent(val);
+					}
+				} catch(Exception e) {
+					error = true;
+					LOG.error("Exception while determining transparency parameters", e);
+				}
+			}
+		}
+			
+		//compress image
+		if (compress != null){
+			if (compress.isEmpty()){
+				error = true;
+				LOG.error("Invalid compress value");
+			} else{
+				try {
+					float cVal = Float.parseFloat(compress);
+					if (cVal < 0 || cVal > 1) {
+						error = true;
+						LOG.error("Invalid compression value: value should be between 0 to 1");
+					} else{
+					imr1.compress(cVal);
+					}
+				} catch(Exception e) {
+					error = true;
+					LOG.error("Exception while determining compress parameters",e);
+				}
+			}
+		}
+		
+		//give output image 
+<<<<<<< .mine
+		File outImg = new File (GlobalConfig.getInstance().OUT_IMAGE_PATH, NamingConvention.convertName(imr1) );
+=======
+		File outImg = new File ( outputname );
+>>>>>>> .r83
+		imr1.setOutputImage(outImg);
+		
+		if (error == false){
+			ImageManipulationReceiverFactory imF = new ImageManipulationReceiverFactory();
+		
+			// invoke
+			imF.buildManipulationReceiver(ImageManipulationReceiverFactory.JAVA2D).execute(imr1);
+		}
+
+		if(verbose == null || !verbose.equals("true")) {
+			if( outImg.exists() ) {
+				// return output image
+				return new FileRepresentation(outImg, MediaType.IMAGE_JPEG);
+			} else {
+				// return original image
+				return new FileRepresentation(inImg, MediaType.IMAGE_JPEG);
+			}
+		} else {
+			if (error){
+				// send status code
+				getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+				return new StringRepresentation ("Invalid request to " + queryFun + " the image!");
+			}else{
+				return new StringRepresentation (" "+ ref.getQuery());
+			}
+		}
+	} 
+	
+}
+
