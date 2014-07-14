@@ -18,12 +18,12 @@ public class EdnaContextListener implements ServletContextListener {
 	private static LazyHomer lh = null; 
 	
 	public void contextInitialized(ServletContextEvent event) {
-		System.out.println("Enda: context initialized");
+		System.out.println("Edna: context initialized");
 		ServletContext servletContext = event.getServletContext();
 		
 		// turn logging off
-		Context.getCurrentLogger().setLevel(Level.SEVERE);
-		Logger.getLogger("").setLevel(Level.SEVERE);
+	//	Context.getCurrentLogger().setLevel(Level.SEVERE);
+	//	Logger.getLogger("").setLevel(Level.SEVERE);
 		
 		
 		LazyHomer lh = new LazyHomer();

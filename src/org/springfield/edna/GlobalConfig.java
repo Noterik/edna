@@ -37,7 +37,7 @@ public class GlobalConfig {
 	public File IMAGE_PATH;
 	
 	/** output image path */ 
-	public File OUT_IMAGE_PATH = new File("/mount/images2/ednaoutimages"); 
+	public File OUT_IMAGE_PATH = new File("/springfield/edna/outputimages"); 
 	
 	/** develop manual path **/
 	public static final String DEVELOPER_MANUAL_FILENAME = "manual.txt";

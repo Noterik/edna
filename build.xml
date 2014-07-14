@@ -80,7 +80,6 @@
 				<exclude name="WEB-INF/lib/org.apache.*.jar"/>
 				<exclude name="WEB-INF/lib/org.json.jar"/>
 				<exclude name="WEB-INF/lib/jdom-1.0.jar"/>
-				<exclude name="WEB-INF/lib/org.restlet.jar" />
 				<exclude name="WEB-INF/lib/com.noelios.restlet.jar"/>
 				<exclude name="WEB-INF/lib/com.noelios.restlet.ext.servlet_2.4.jar"/>
 				<exclude name="WEB-INF/lib/xom-1.0.jar"/>
@@ -89,9 +88,8 @@
 				<exclude name="WEB-INF/lib/xercesImpl-2.6.2.jar"/>
 				<exclude name="WEB-INF/lib/xml-apis-1.0.b2.jar"/>
 				<exclude name="WEB-INF/lib/xalan-2.6.0.jar"/>
-				<exclude name="WEB-INF/lib/springfield-tools.jar"/>
+				<exclude name="WEB-INF/lib/mojo.jar"/>
 				<exclude name="WEB-INF/lib/org.osgi.core-4.0.0.jar"/>
-				<exclude name="WEB-INF/lib/org.restlet.*.jar"/>
 			</fileset>
 		</war>
 	</target>

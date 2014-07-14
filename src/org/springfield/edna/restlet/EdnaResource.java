@@ -1,13 +1,19 @@
 package org.springfield.edna.restlet;
 
 import java.awt.AlphaComposite;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
+
 import org.w3c.dom.*;
+
 import javax.xml.xpath.*;
 import javax.xml.parsers.*;
+
 import java.net.URL;
+
 import org.apache.log4j.Logger;
 import org.restlet.Request;
 import org.restlet.data.*;
@@ -20,6 +26,7 @@ import org.springfield.edna.restlet.EdnaResource;
 
 public class EdnaResource extends ServerResource {
 	Boolean error = false;
+	private static int counter = 0;
 	public enum validactions { crop,scale, adjust, rotate, transparent, compress, original; }
 
 	/** the EdnaResource's log4j Logger */
@@ -32,7 +39,7 @@ public class EdnaResource extends ServerResource {
 	 */
 	@Override
 	public void doInit() {
-		LOG.info("doInit");
+		//LOG.info("doInit");
 		//read commands from script
 		if (scriptcommands == null) {
 			scriptcommands = readCommandList();
@@ -50,8 +57,6 @@ public class EdnaResource extends ServerResource {
 	 */
 	@Get
 	public Representation performConvert(Representation rep) {
-		LOG.info("Received an image request (convert)");
-		System.out.println("Received an image request (convert)");
 		//read parameters from hashmap and form into an array
 		String[] commands = readParamsIntoCommands(rep);
 		
@@ -69,7 +74,9 @@ public class EdnaResource extends ServerResource {
 			error = true;
 			LOG.error("Missing image!");
 		}
+	
 		
+		/*
 		File IMAGE_PATH = GlobalConfig.getInstance().IMAGE_PATH;
 		if(!new File(IMAGE_PATH, imPath).exists()) {
 			System.out.println("IMAGE_PATH does not exit: " + IMAGE_PATH.getAbsolutePath());
@@ -79,10 +86,32 @@ public class EdnaResource extends ServerResource {
 				IMAGE_PATH = new File("/mount/images3");
 			}
 		}
-		System.out.println("IMAGE_PATH: " + IMAGE_PATH.getAbsolutePath());
+		*/
+		
+		// check check and call function to manipulate image
+		rep = sendFromCache(commands);
+		if (rep!=null) {
+			return rep;
+		}
+		
+		String path = "/springfield/edna/tmpimages/";
+		String filename = ""+(counter++);
+		
+		System.out.println("TMP IMG = "+path+filename+" P="+imPath);
+		
+		boolean download = saveUrltoDisk(path+filename,"http://images1.noterik.com/"+imPath);
+		if (!download) { download = saveUrltoDisk(path+filename,"http://images2.noterik.com/"+imPath); }
+		if (!download) { download = saveUrltoDisk(path+filename,"http://images3.noterik.com/"+imPath); }
+		
+		if (!download) {
+			System.out.println("SAVE FAILED EDNA CHECKED ALL 3 SERVERS !");
+			// weird other code returns not and performs commands anyway !!!
+		};
+		
+		
+		//System.out.println("IMAGE_PATH: " + IMAGE_PATH.getAbsolutePath());
 		// locate image
-		File inImg = new File(IMAGE_PATH, imPath);
-		System.out.println("inImg: " + inImg.getAbsolutePath());
+		File inImg = new File(path+filename);
 		// check if image exists
 		if (!inImg.exists()) {
 			LOG.debug(inImg);
@@ -92,11 +121,9 @@ public class EdnaResource extends ServerResource {
 			// set parameters for input image
 			imr1.setInputImage(inImg);
 		}
-			// check check and call function to manipulate image
-			rep = sendFromCache(commands);
-			if (rep==null) {
-				rep = performCommands(commands);
-			}	
+		
+		rep = performCommands(commands);
+			
 		return rep;	
 	}
 	
@@ -269,7 +296,7 @@ public class EdnaResource extends ServerResource {
 		String extension = imPath.substring(imPath.lastIndexOf('.'));// with extension
 		String directory = imagename.substring(0, imagename.lastIndexOf('/'));
 		directory = GlobalConfig.getInstance().OUT_IMAGE_PATH + "/" + directory;
-		System.out.println("Try to create dir: " + directory);
+		//System.out.println("Try to create dir: " + directory);
 		File outputDir = new File(directory);
 		if(!outputDir.exists()) {
 			boolean created = createDestDirectory(outputDir);
@@ -456,4 +483,34 @@ public class EdnaResource extends ServerResource {
 		
 		return cd;
 	}
+	
+	private boolean saveUrltoDisk(String filename,String url) {
+		try {
+			BufferedInputStream in = null;
+			FileOutputStream fout = null;
+			try {
+				in = new BufferedInputStream(new URL(url).openStream());
+				fout = new FileOutputStream(filename);
+
+				final byte data[] = new byte[1024];
+				int count;
+				while ((count = in.read(data, 0, 1024)) != -1) {
+					fout.write(data, 0, count);
+				}
+			} finally {
+				if (in != null) {
+					in.close();
+				}
+				if (fout != null) {
+					fout.close();
+				}
+			}
+		} catch(Exception e) {
+			//e.printStackTrace();
+			return false;
+		}	
+		return true;
+	}
+
+
 }
