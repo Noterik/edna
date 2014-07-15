@@ -31,8 +31,9 @@ public class EdnaResource extends ServerResource {
 
 	/** the EdnaResource's log4j Logger */
 	private static final Logger LOG = Logger.getLogger(EdnaResource.class);
-
 	private static HashMap<String, String> scriptcommands = null;
+	ImageManipulationGlobal imr1 = new ImageManipulationGlobal();
+
 
 	/**
 	 * Called right after constructor of this resource (every request)
@@ -45,9 +46,6 @@ public class EdnaResource extends ServerResource {
 			scriptcommands = readCommandList();
 		}
 	}
-
-	// build manipulation parameter object
-	ImageManipulationGlobal imr1 = new ImageManipulationGlobal();
 
 	/**
 	 * Main call
@@ -63,11 +61,12 @@ public class EdnaResource extends ServerResource {
 		if(commands==null) { //Apply default command = thumbnail
 			commands = applyThumbnailAction();
 		}
+		
 		//get request to determine image path
 		Request request = getRequest();
 		Reference ref = request.getResourceRef();
 		// determine image path
-		String imPath = ref.getPath().substring("/edna/".length());
+		String imPath = ref.getPath().substring("/edna/".length()); // does the length change of the world edna change over time ?
 
 		// check if the image path is empty
 		if (imPath.isEmpty()) {
@@ -76,18 +75,6 @@ public class EdnaResource extends ServerResource {
 		}
 	
 		
-		/*
-		File IMAGE_PATH = GlobalConfig.getInstance().IMAGE_PATH;
-		if(!new File(IMAGE_PATH, imPath).exists()) {
-			System.out.println("IMAGE_PATH does not exit: " + IMAGE_PATH.getAbsolutePath());
-			IMAGE_PATH = new File("/mount/images2");
-			if(!new File(IMAGE_PATH, imPath).exists()) {
-				System.out.println("IMAGE_PATH does not exit: " + IMAGE_PATH.getAbsolutePath());
-				IMAGE_PATH = new File("/mount/images3");
-			}
-		}
-		*/
-		
 		// check check and call function to manipulate image
 		rep = sendFromCache(commands);
 		if (rep!=null) {
@@ -95,35 +82,38 @@ public class EdnaResource extends ServerResource {
 		}
 		
 		String path = "/springfield/edna/tmpimages/";
-		String filename = ""+(counter++);
-		
-		System.out.println("TMP IMG = "+path+filename+" P="+imPath);
-		
+		String filename = ""+(counter++); // simple counter to make sure filenames are new each time. files are deleted when done
+
+		// kind of a weird trick to test if we have the time on any of hour image servers, looks weird but is
+		// probably the best way and only done when not in cache. Needs to be a array loaded from a property
 		boolean download = saveUrltoDisk(path+filename,"http://images1.noterik.com/"+imPath);
 		if (!download) { download = saveUrltoDisk(path+filename,"http://images2.noterik.com/"+imPath); }
 		if (!download) { download = saveUrltoDisk(path+filename,"http://images3.noterik.com/"+imPath); }
 		
 		if (!download) {
-			System.out.println("SAVE FAILED EDNA CHECKED ALL 3 SERVERS !");
-			// weird other code returns not and performs commands anyway !!!
+			error = true;
+			//System.out.println("Edna: Could not download image from any server");
+			return null; // do we return a null for a rep?
 		};
 		
 		
-		//System.out.println("IMAGE_PATH: " + IMAGE_PATH.getAbsolutePath());
 		// locate image
 		File inImg = new File(path+filename);
 		// check if image exists
 		if (!inImg.exists()) {
-			LOG.debug(inImg);
 			error = true;
-			LOG.error("No input image!");
+			//LOG.error("No input image!");
+			return null;  // do we return a null for a rep?
 		} else {
 			// set parameters for input image
 			imr1.setInputImage(inImg);
 		}
 		
-		rep = performCommands(commands);
-			
+		// perform all the commands on the image
+		rep = performCommands(commands);	
+		
+		// so lets remove the downloaded (temp image)
+		inImg.delete();
 		return rep;	
 	}
 	
@@ -343,7 +333,7 @@ public class EdnaResource extends ServerResource {
 	  			}
 	        	  break;
 	           case scale :
-	        	   System.out.println("DO SCALE"); 
+	        	   //System.out.println("DO SCALE"); 
 	        	   try{
 	   				String[] scaleSplit = value.split("x");
 	   				String sWidth = scaleSplit[0];
@@ -357,7 +347,7 @@ public class EdnaResource extends ServerResource {
 	        	   break;
 	        	   
 	           case adjust :
-		        	  System.out.println("DO ADJUST"); 
+		        	  //System.out.println("DO ADJUST"); 
 		        	  try{
 		  				String[] adjustSplit = value.split("x");
 		  				String aWidth = adjustSplit[0];
@@ -371,7 +361,7 @@ public class EdnaResource extends ServerResource {
 		        	  break;
 		        	  
 	           case rotate :
-		        	  System.out.println("DO ROTATE"); 
+		        	  //System.out.println("DO ROTATE"); 
 		        	  try{
 		  				int intAngle = Integer.parseInt(value);
 		  				if(intAngle<0 && intAngle>360){
@@ -388,7 +378,7 @@ public class EdnaResource extends ServerResource {
 		        	  break;
 		        	  
 	           case transparent :
-		        	  System.out.println("DO TRANSPARENT"); 
+		        	  //System.out.println("DO TRANSPARENT"); 
 		        	  try{
 		  				float val = Float.parseFloat(value);
 		  				if (val > AlphaComposite.SRC_OVER || val < 0) {
@@ -403,7 +393,7 @@ public class EdnaResource extends ServerResource {
 		        	  break;
 		        	  
 	           case compress :
-		        	  System.out.println("DO COMPRESS"); 
+		        	  //System.out.println("DO COMPRESS"); 
 		        	  try{
 		  				float cVal = Float.parseFloat(value);
 		  				if (cVal < 0 || cVal > 1) {
