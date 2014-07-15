@@ -1,3 +1,23 @@
+/* 
+* EdnaContextListener.java
+* 
+* Copyright (c) 2014 Noterik B.V.
+* 
+* This file is part of Edna, related to the Noterik Springfield project.
+*
+* Edna is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* Edna is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with Edna.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package org.springfield.edna;
 
 import java.net.InetAddress;
@@ -21,11 +41,6 @@ public class EdnaContextListener implements ServletContextListener {
 		System.out.println("Edna: context initialized");
 		ServletContext servletContext = event.getServletContext();
 		
-		// turn logging off
-	//	Context.getCurrentLogger().setLevel(Level.SEVERE);
-	//	Logger.getLogger("").setLevel(Level.SEVERE);
-		
-		
 		LazyHomer lh = new LazyHomer();
 
 		lh.init(servletContext.getRealPath("/"));
@@ -35,9 +50,6 @@ public class EdnaContextListener implements ServletContextListener {
 	public void contextDestroyed(ServletContextEvent event) {
 		System.out.println("Edna: context destroyed");
 		lh.destroy();
-		
-		// destroy global config
-		// GlobalConfig.instance().destroy();
 	}
 
 }

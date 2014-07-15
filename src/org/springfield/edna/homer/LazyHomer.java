@@ -1,3 +1,23 @@
+/* 
+* LazyHomer.java
+* 
+* Copyright (c) 2014 Noterik B.V.
+* 
+* This file is part of Edna, related to the Noterik Springfield project.
+*
+* Edna is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* Edna is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with Edna.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package org.springfield.edna.homer;
 
 import java.io.BufferedInputStream;
@@ -119,27 +139,9 @@ public class LazyHomer implements MargeObserver {
 					LOG.info("This lou is not turned on, use smithers todo this for ip "+myip);
 				}
 			}
-			/*
-			if (mp!=null && mp.getStatus().equals("on")) {
-				if (serv==null) serv = new EdnaServer();
-				if (!serv.isRunning()) {
-					LOG.info("This edna will be started (on startup)");
-					serv.init();
-				}
-			} else {
-				if (serv!=null && serv.isRunning()) {
-					serv.destroy();
-				} else {
-					LOG.info("This edna is not turned on, use smithers todo this for ip "+myip);
-				}
-			}
-			*/
+
 		}
-		if (oldsize>0) {
-			// we already had one so lets see if we need to switch to
-			// a better one.
-			//getDifferentSmithers();
-		}
+
 	}
 	
 	public static EdnaProperties getMyEdnaProperties() {
@@ -355,24 +357,6 @@ public class LazyHomer implements MargeObserver {
 		if (ins.checkKnown()) {
 			// we are verified (has a name other than unknown)		
 			EdnaProperties mp = ednas.get(myip);
-			/*
-			if (serv==null) serv = new EdnaServer();
-			if (mp!=null && mp.getStatus().equals("on")) {
-
-				if (!serv.isRunning()) { 
-					LOG.info("This edna will be started");
-					serv.init();
-				}
-				setLogLevel(mp.getDefaultLogLevel());
-			} else {
-				if (serv.isRunning()) {
-					LOG.info("This edna will be turned off");
-					serv.destroy();
-				} else {
-					LOG.info("This edna is not turned on, use smithers todo this for ip "+myip);
-				}
-			}
-			*/
 		}
 		}
 	}
