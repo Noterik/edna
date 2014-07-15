@@ -96,7 +96,6 @@ public class EdnaResource extends ServerResource {
 			return null; // do we return a null for a rep?
 		};
 		
-		
 		// locate image
 		File inImg = new File(path+filename);
 		// check if image exists
