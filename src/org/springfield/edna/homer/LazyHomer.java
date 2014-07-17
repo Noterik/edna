@@ -64,6 +64,7 @@ public class LazyHomer implements MargeObserver {
 	private static LazyHomer ins;
 	private static boolean running = false;
 	static String role = "production";
+	private int retryCounter;
 
 	
 	/**
@@ -72,6 +73,7 @@ public class LazyHomer implements MargeObserver {
 	public void init(String r) {
 		rootPath = r;
 		ins = this;
+		retryCounter = 0;
 		initConfig();
 		initLogger();
 		
@@ -244,6 +246,7 @@ public class LazyHomer implements MargeObserver {
 
 					if (ipnumber.equals(myip)) {
 						foundmynode = true;
+						retryCounter = 0;
 						if (name.equals("unknown")) {
 							System.out.println("This edna is not verified change its name, use smithers todo this for ip "+myip);
 						} else {
@@ -254,6 +257,10 @@ public class LazyHomer implements MargeObserver {
 				}	
 			}
 			if (!foundmynode) {
+				if (retryCounter < 30) {
+					//retry 30 times (= 5 min) to handle temp smithers downtime (eg daily restarts)
+					retryCounter++;
+				} else {
 				LOG.info("LazyHomer : Creating my processing node "+LazyHomer.getSmithersUrl()  + "/domain/internal/service/edna/properties");
 				String os = "unknown"; // we assume windows ?
 				try{
@@ -288,8 +295,8 @@ public class LazyHomer implements MargeObserver {
 
 	        	}
 	        	newbody+="</properties></nodes></fsxml>";	
-				//LazyHomer.sendRequest("PUT","/domain/internal/service/edna/properties",newbody,"text/xml");
 				smithers.put("/domain/internal/service/edna/properties",newbody,"text/xml");
+			}
 			}
 		} catch (Exception e) {
 			LOG.info("LazyHomer exception doc");
