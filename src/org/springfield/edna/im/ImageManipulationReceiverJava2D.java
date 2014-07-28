@@ -120,6 +120,10 @@ public class ImageManipulationReceiverJava2D implements IImageManipulationReceiv
 		double imageRatio = (double)imgWidth/(double)imgHeight;
 		
 		int type = workingImage.getType();
+		if (BufferedImage.TYPE_CUSTOM == type) { //Mainly occurs when picture has transparency, e.g. PNG
+			// apply a type for image majority
+			type = BufferedImage.TYPE_INT_RGB;
+		}
 		BufferedImage rescaledImage = new BufferedImage (w, h, type);
 		
 		
@@ -144,6 +148,10 @@ public class ImageManipulationReceiverJava2D implements IImageManipulationReceiv
 		int w = workingImage.getWidth();
 		int h = workingImage.getHeight();
 		int type = workingImage.getType();
+		if (BufferedImage.TYPE_CUSTOM == type) { //Mainly occurs when picture has transparency, e.g. PNG
+			// apply a type for image majority
+			type = BufferedImage.TYPE_INT_RGB;
+		}
 		BufferedImage newImage = new BufferedImage (w, h, type );
 		Graphics2D g = newImage.createGraphics();
 		g.rotate(Math.toRadians(angle), w/2, h/2);
@@ -167,6 +175,10 @@ public class ImageManipulationReceiverJava2D implements IImageManipulationReceiv
 	private void cropImage (int x1, int y1, int w, int h){
 		LOG.debug("Cropping image to x:"+x1+", y:"+y1+", width:"+w+", h:"+h);
 		int type = workingImage.getType();
+		if (BufferedImage.TYPE_CUSTOM == type) { //Mainly occurs when picture has transparency, e.g. PNG
+			// apply a type for image majority
+			type = BufferedImage.TYPE_INT_RGB;
+		}
 		BufferedImage croppedImage = new BufferedImage (w, h, type);
 		Graphics2D g = croppedImage.createGraphics();
 		g.drawImage(croppedImage, x1, y1, w, h, null);
@@ -192,6 +204,10 @@ public class ImageManipulationReceiverJava2D implements IImageManipulationReceiv
 		double imageRatio = (double)imageWidth/(double)imageHeight;
 		
 		int type = workingImage.getType();
+		if (BufferedImage.TYPE_CUSTOM == type) { //Mainly occurs when picture has transparency, e.g. PNG
+			// apply a type for image majority
+			type = BufferedImage.TYPE_INT_RGB;
+		}
 		BufferedImage adjustedImage = new BufferedImage (w, h, type);
 		
 		
