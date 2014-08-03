@@ -6,28 +6,29 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
 	
   <display-name>image manipulation service</display-name>
+  
+  	<servlet>
+	    <servlet-name>EdnaServlet</servlet-name>
+	    <servlet-class>org.springfield.edna.EdnaServlet</servlet-class>
+	    <load-on-startup>1</load-on-startup>
+	</servlet>   
 	
-	<!-- Application class name -->
-	<context-param>
-		<param-name>org.restlet.application</param-name>
-		<param-value>org.springfield.edna.restlet.EdnaApplication</param-value>
-	</context-param>
-
-	<!-- Restlet adapter -->
-	<servlet>
-		<servlet-name>RestletServlet</servlet-name>
-		<servlet-class>org.restlet.ext.servlet.ServerServlet</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
+	<servlet-mapping>
+	    <servlet-name>EdnaServlet</servlet-name>
+	    <url-pattern>/*</url-pattern>
+	</servlet-mapping>
+	
 	
 	<!-- listener that initializes server, since Application.start() is no longer called upon context load in restlet 2.x -->
   	<listener>
   		<listener-class>org.springfield.edna.EdnaContextListener</listener-class>
   	</listener>
+	
 
-	<!-- Catch all requests -->
 	<servlet-mapping>
-		<servlet-name>RestletServlet</servlet-name>
-		<url-pattern>/*</url-pattern>
+	    <servlet-name>EdnaServlet</servlet-name>
+	    <url-pattern>/edna/*</url-pattern>
 	</servlet-mapping>
+	
+
 </web-app>

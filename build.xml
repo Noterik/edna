@@ -90,6 +90,7 @@
 				<exclude name="WEB-INF/lib/xalan-2.6.0.jar"/>
 				<exclude name="WEB-INF/lib/mojo.jar"/>
 				<exclude name="WEB-INF/lib/org.osgi.core-4.0.0.jar"/>
+				<exclude name="WEB-INF/lib/org.restlet.*"/>
 			</fileset>
 		</war>
 	</target>
