@@ -25,6 +25,8 @@ import java.io.File;
 public class ImageManipulationGlobal {
 	public int width;
 	public int height;
+	public boolean maxwidth = false;
+	public boolean maxheight = false;
 	public float pixels;
 	public int angle;
 	public int type;
@@ -51,9 +53,11 @@ public class ImageManipulationGlobal {
 	}
 	
 	
-	public void scale(int wid, int hei){
+	public void scale(int wid, int hei,boolean mw,boolean mh){
 		width = wid;
 		height = hei;
+		maxwidth  = mw;
+		maxheight  = mh;
 		doScale = true;
 	}
 	

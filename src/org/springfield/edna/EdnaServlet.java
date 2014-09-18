@@ -81,7 +81,7 @@ public class EdnaServlet extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		EdnaManager em = EdnaManager.instance();
-		em.sendImageBasedOnURL(request.getRequestURI().substring(5),request.getQueryString(),response);
+		em.sendImageBasedOnURL(request.getRequestURI().substring(5),request,response);
 		return;
 	}
 	

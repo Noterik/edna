@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.HashMap;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -45,21 +46,25 @@ public class EdnaManager {
     	return instance;
     }
 	
-	public void sendImageBasedOnURL(String image,String params,HttpServletResponse response) {
+	public void sendImageBasedOnURL(String image,HttpServletRequest request,HttpServletResponse response) {
 		String commands[] = null;
 		
-		if (params!=null) {
-			// read from uri
+
+		String script = request.getParameter("script");
+		if (script!=null) {
+			commands = applyScript(script);
 		}
 		
 		if(commands==null) { //Apply default command = thumbnail
-			commands = applyThumbnailAction();
+			commands = applyScript("thumbnail");
 		}
 				
 		String diskname = getOutputName(image,commands);
+		System.out.println("OUTPUTNAME="+diskname);
 		File file = new File(diskname);
 		if (file.exists()) {
 			// send from cache !
+			System.out.println("SEND FROM CACHE="+diskname);
 			sendFile(file,response);
 		} else {
 			// generate file
@@ -78,9 +83,29 @@ public class EdnaManager {
 		String path = "/springfield/edna/tmpimages/";
 		String filename = ""+(counter++); // simple counter to make sure filenames are new each time. files are deleted when done
 
-		boolean download = saveUrltoDisk(path+filename,"http://images1.noterik.com/"+inputimage);
-		if (!download) { download = saveUrltoDisk(path+filename,"http://images2.noterik.com/"+inputimage); }
-		if (!download) { download = saveUrltoDisk(path+filename,"http://images3.noterik.com/"+inputimage); }
+		boolean download = false;
+		System.out.println("INPUTIMAGE="+inputimage);
+		int pos = inputimage.indexOf("/external/");
+		if (pos==0) {
+			System.out.println("INPUTE http://"+inputimage.substring(pos+10));
+			download = saveUrltoDisk(path+filename,"http://"+inputimage.substring(pos+10));
+			if (inputimage.indexOf(".svg")!=-1) {
+				System.out.println("SVG detected");
+				// we should pass this untouched 
+				File tmpimage = new File(path+filename); 
+				String dirname = diskname.substring(0,diskname.lastIndexOf("/"));
+				File dir = new File(dirname);
+				if (!dir.exists()) {
+					dir.mkdirs();
+				}
+				tmpimage.renameTo(new File(diskname));
+				return;
+			}
+		} else {
+			download = saveUrltoDisk(path+filename,"http://images1.noterik.com/"+inputimage);
+			if (!download) { download = saveUrltoDisk(path+filename,"http://images2.noterik.com/"+inputimage); }
+			if (!download) { download = saveUrltoDisk(path+filename,"http://images3.noterik.com/"+inputimage); }
+		}
 		
 		if (download) {
 		
@@ -89,10 +114,10 @@ public class EdnaManager {
 			File tmpimage = new File(path+filename); 
 			imr.setInputImage(tmpimage);
 		
-			for (int i=0;i<commands.length;i++) {
+			for (int i=0;i<commands.length;i++) { // needs minimal 2 commands ?
 				String[] command = commands[i].split("=");
 				String key = command[0];
-				String value = commands[1];
+				String value = command[1];
 				processImage(imr, key, value);
 			}	
 		
@@ -110,6 +135,7 @@ public class EdnaManager {
 	}
 	
 	private void processImage(ImageManipulationGlobal imr,String key, String value) {
+		  System.out.println("PROCESS "+key+" V="+value);
 	       switch (validactions.valueOf(key)) {
 	           case crop :
 	        	  try{
@@ -133,9 +159,24 @@ public class EdnaManager {
 	   				String[] scaleSplit = value.split("x");
 	   				String sWidth = scaleSplit[0];
 	   				String sHeight = scaleSplit[1];
-	   				int intWidth = Integer.parseInt(sWidth);
-	   				int intHeight = Integer.parseInt(sHeight);
-	   				imr.scale(intWidth, intHeight);
+	   				int intWidth = 0;
+	   				int intHeight = 0;
+	   				boolean maxWidth = false;
+	   				boolean maxHeight = false;
+	   				if (sWidth.endsWith("!")) {
+		   				intWidth = Integer.parseInt(sWidth.substring(0,sWidth.length()-1));
+		   				maxWidth = true;
+	   				} else {
+		   				intWidth = Integer.parseInt(sWidth);
+	   				}
+	   				if (sHeight.endsWith("!")) {
+		   				intHeight = Integer.parseInt(sHeight.substring(0,sHeight.length()-1));
+		   				maxHeight = true;
+	   				} else {
+		   				intWidth = Integer.parseInt(sHeight);
+	   				}
+	   				
+	   				imr.scale(intWidth, intHeight,maxWidth,maxHeight);
 	   			}catch(Exception e){
 	   				//LOG.error("Exception encountered while scaling!");
 	   			}
@@ -212,14 +253,14 @@ public class EdnaManager {
 
 	/** parse parameters from script (xml parsing) */
 	private static HashMap<String, String> readCommandList() {
-		String fullUrl = "http://bart1.noterik.com/bart/domain/webtv/service/edna/cmdlist";
+		String filename = "/springfield/edna/config/cmdlist.xml";
 		HashMap<String, String> cmdList = new HashMap<String, String>();
 
 		try {
 			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
 			domFactory.setNamespaceAware(true);
 			DocumentBuilder builder = domFactory.newDocumentBuilder();
-			Document doc = builder.parse(new URL(fullUrl).openStream());
+			Document doc = builder.parse(new File(filename));
 			doc.getDocumentElement().normalize();
 			XPath xpath = XPathFactory.newInstance().newXPath();
 
@@ -257,8 +298,8 @@ public class EdnaManager {
 		return nValue.getNodeValue();
 	}
 	
-	private String[] applyThumbnailAction() {
-		String script = scriptcommands.get("thumbnail");
+	private String[] applyScript(String name) {
+		String script = scriptcommands.get(name);
 		if (script != null) {
 				return script.split(",");
 		}
@@ -289,11 +330,14 @@ public class EdnaManager {
 	
 	private void sendFile(File file,HttpServletResponse response) {
 		try {
-			response.setContentType("image/jpeg");
+			response.setHeader("Cache-Control", "no-transform,public,max-age=86400,s-maxage=86400");
+			response.setContentType(setCorrectExtention(file.getName()));
+			//response.setContentType("image/jpeg");
 			response.setContentLength((int)file.length());
+			System.out.println("SIZE="+file.length());
 			FileInputStream in = new FileInputStream(file);    
 			OutputStream out = response.getOutputStream();
-			byte[] buf = new byte[1024];    
+			byte[] buf = new byte[10240];    
 			int i = 0;    
 		    while ((i = in.read(buf)) > 0) {   
 				out.write(buf, 0, i);    
@@ -333,6 +377,18 @@ public class EdnaManager {
 			return false;
 		}	
 		return true;
+	}
+	
+	private String setCorrectExtention(String name) {
+		String ext = name.substring(name.lastIndexOf(".")+1);
+		ext = ext.toLowerCase();
+		System.out.println("EXT="+ext);
+		if (ext.equals("jpg")) {
+			return("image/jpeg");
+		} else if (ext.equals("svg")) {
+			return("image/svg+xml");
+		}
+		return("image/jpeg");
 	}
 
 	

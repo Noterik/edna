@@ -55,7 +55,7 @@ public class ImageManipulationReceiverJava2D implements IImageManipulationReceiv
 		}
 		
 		if (imG.doScale){
-			scaleImage(imG.width, imG.height);
+			scaleImage(imG.width, imG.height,imG.maxwidth,imG.maxheight);
 		}
 		
 		if (imG.doRotate){
@@ -110,11 +110,12 @@ public class ImageManipulationReceiverJava2D implements IImageManipulationReceiv
 	}
 	
 	//method for scaling an image
-	private void scaleImage(int w, int h) {
-		LOG.debug("Scaling image "+w+"x"+h);
+	private void scaleImage(int w, int h,boolean maxw,boolean maxh) {
+		System.out.println("Scaling image "+w+"x"+h+" maxw="+maxw+" maxy="+maxh);
 		
 		int imgWidth = workingImage.getWidth(); //get width of working image
 		int imgHeight = workingImage.getHeight();//get height of working image
+		System.out.println("Org image "+imgWidth+"x"+imgHeight);
 		
 		double scaleRatio = (double)w/(double)h;
 		double imageRatio = (double)imgWidth/(double)imgHeight;
@@ -123,23 +124,40 @@ public class ImageManipulationReceiverJava2D implements IImageManipulationReceiv
 		if (BufferedImage.TYPE_CUSTOM == type) { //Mainly occurs when picture has transparency, e.g. PNG
 			// apply a type for image majority
 			type = BufferedImage.TYPE_INT_RGB;
-		}
-		BufferedImage rescaledImage = new BufferedImage (w, h, type);
-		
-		
-		if(scaleRatio<imageRatio) {
+		}		
+		if (maxw || maxh) {
+			  // so we have max values for width or height
+			  if (maxw && maxh) { // both are maxed
+				  double wscale = (double)imgWidth/w;
+				  double hscale = (double)imgHeight/h;
+				  double selectedscale = hscale;
+				  if (wscale>hscale) {
+					  selectedscale = wscale;
+				  }
+				  int nw = (int)(imgWidth/selectedscale);
+				  int nh  = (int)(imgHeight/selectedscale);
+				  System.out.println("W="+nw+" H="+nh);
+				  BufferedImage rescaledImage = new BufferedImage (nw, nh, type);
+				  Graphics2D graphics = rescaledImage.createGraphics();
+				  graphics.drawImage(workingImage, 0,0,nw,nh,null);
+				  graphics.dispose();
+				  workingImage = rescaledImage;
+			  }
+		} else if(scaleRatio<imageRatio) {
+			  BufferedImage rescaledImage = new BufferedImage (w, h, type);
 			  int newHeight1 = (int) (w/imageRatio);
 			  Graphics2D graphics = rescaledImage.createGraphics();
 			  graphics.drawImage(workingImage, 0, (h-newHeight1)/2, w, newHeight1,null);
 			  graphics.dispose();
-			 
-		   } else {
+			  workingImage = rescaledImage;
+		} else {
+		  	  BufferedImage rescaledImage = new BufferedImage (w, h, type);
 			  int newWidth1 = (int) (h*imageRatio);
 			  Graphics2D graphics = rescaledImage.createGraphics();
 			  graphics.drawImage(workingImage, (w-newWidth1)/2, 0, newWidth1, h,null);
 			  graphics.dispose();
-		   }
-		workingImage = rescaledImage;
+			  workingImage = rescaledImage;
+	    }
 	}
 	
 	//method for rotating an image
