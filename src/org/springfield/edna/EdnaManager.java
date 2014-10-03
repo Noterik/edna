@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.HashMap;
 
+import javax.imageio.ImageWriteParam;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
@@ -17,8 +18,8 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.springfield.edna.im.ImageManipulationGlobal;
-import org.springfield.edna.im.ImageManipulationReceiverFactory;
+import org.imgscalr.Scalr;
+import org.springfield.edna.im.ProcessingImage;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -27,12 +28,10 @@ import org.w3c.dom.NodeList;
 
 public class EdnaManager {
 	
-	private enum validactions { crop,scale, adjust, rotate, transparent, compress, original; }
+	private enum validactions { crop,scale, adjust, rotate, transparent, compress, original,recompress; }
 	private static EdnaManager instance;
 	private static HashMap<String, String> scriptcommands = null;
 	private int counter = 0;
-	
-	//ImageManipulationGlobal imr1 = new ImageManipulationGlobal();
 	
 	private EdnaManager() {
         System.out.println("Edna Manager started");
@@ -60,11 +59,9 @@ public class EdnaManager {
 		}
 				
 		String diskname = getOutputName(image,commands);
-		System.out.println("OUTPUTNAME="+diskname);
 		File file = new File(diskname);
 		if (file.exists()) {
 			// send from cache !
-			System.out.println("SEND FROM CACHE="+diskname);
 			sendFile(file,response);
 		} else {
 			// generate file
@@ -84,10 +81,8 @@ public class EdnaManager {
 		String filename = ""+(counter++); // simple counter to make sure filenames are new each time. files are deleted when done
 
 		boolean download = false;
-		System.out.println("INPUTIMAGE="+inputimage);
 		int pos = inputimage.indexOf("/external/");
 		if (pos==0) {
-			System.out.println("INPUTE http://"+inputimage.substring(pos+10));
 			download = saveUrltoDisk(path+filename,"http://"+inputimage.substring(pos+10));
 			if (inputimage.indexOf(".svg")!=-1) {
 				System.out.println("SVG detected");
@@ -109,16 +104,14 @@ public class EdnaManager {
 		
 		if (download) {
 		
-			ImageManipulationGlobal imr = new ImageManipulationGlobal();
-			
-			File tmpimage = new File(path+filename); 
-			imr.setInputImage(tmpimage);
+			File tmpimage = new File(path+filename);
+			ProcessingImage image = new ProcessingImage(tmpimage);
 		
 			for (int i=0;i<commands.length;i++) { // needs minimal 2 commands ?
 				String[] command = commands[i].split("=");
 				String key = command[0];
 				String value = command[1];
-				processImage(imr, key, value);
+				processImageNew(image, key, value);
 			}	
 		
 			String dirname = diskname.substring(0,diskname.lastIndexOf("/"));
@@ -126,129 +119,84 @@ public class EdnaManager {
 			if (!dir.exists()) {
 				dir.mkdirs();
 			}
-			imr.setOutputImage(new File(diskname));
-			ImageManipulationReceiverFactory imF = new ImageManipulationReceiverFactory();
-			imF.buildManipulationReceiver(ImageManipulationReceiverFactory.JAVA2D).execute(imr);
+			
+			image.writeToFile(diskname);
 			
 			tmpimage.delete();
 		}
 	}
 	
-	private void processImage(ImageManipulationGlobal imr,String key, String value) {
-		  System.out.println("PROCESS "+key+" V="+value);
-	       switch (validactions.valueOf(key)) {
-	           case crop :
-	        	  try{
-	  				String[] cropSplit = value.split("x");
-	  				String cXco = cropSplit[0];
-	  				String cYco = cropSplit[1];
-	  				String cWidth = cropSplit[2];
-	  				String cHeight = cropSplit[3];
-	  				int x = Integer.parseInt(cXco);
-	  				int y = Integer.parseInt(cYco);
-	  				int w = Integer.parseInt(cWidth);
-	  				int h = Integer.parseInt(cHeight);
-	  				imr.crop(x, y, w, h);
-	  			}catch(Exception e){
-	  				//LOG.error("Exception encountered while cropping!");
-	  			}
-	        	  break;
-	           case scale :
-	        	   //System.out.println("DO SCALE"); 
-	        	   try{
-	   				String[] scaleSplit = value.split("x");
-	   				String sWidth = scaleSplit[0];
-	   				String sHeight = scaleSplit[1];
-	   				int intWidth = 0;
-	   				int intHeight = 0;
-	   				boolean maxWidth = false;
-	   				boolean maxHeight = false;
-	   				if (sWidth.endsWith("!")) {
-		   				intWidth = Integer.parseInt(sWidth.substring(0,sWidth.length()-1));
-		   				maxWidth = true;
-	   				} else {
-		   				intWidth = Integer.parseInt(sWidth);
-	   				}
-	   				if (sHeight.endsWith("!")) {
-		   				intHeight = Integer.parseInt(sHeight.substring(0,sHeight.length()-1));
-		   				maxHeight = true;
-	   				} else {
-		   				intWidth = Integer.parseInt(sHeight);
-	   				}
-	   				
-	   				imr.scale(intWidth, intHeight,maxWidth,maxHeight);
-	   			}catch(Exception e){
-	   				//LOG.error("Exception encountered while scaling!");
-	   			}
-	        	   break;
-	        	   
-	           case adjust :
-		        	  //System.out.println("DO ADJUST"); 
-		        	  try{
-		  				String[] adjustSplit = value.split("x");
-		  				String aWidth = adjustSplit[0];
-		  				String aHeight = adjustSplit[1];
-		  				int intWidth = Integer.parseInt(aWidth);
-		  				int intHeight = Integer.parseInt(aHeight);
-		  				imr.adjustLayout(intWidth, intHeight);
-		  			}catch(Exception e){
-		  				//LOG.error("Exception encountered adjusting!");
-		  			}
-		        	  break;
-		        	  
-	           case rotate :
-		        	  //System.out.println("DO ROTATE"); 
-		        	  try{
-		  				int intAngle = Integer.parseInt(value);
-		  				if(intAngle<0 && intAngle>360){
-		  				//	error = true;
-		  				//	LOG.error("Invalid value to rotate an image");
-		  				}else{
-		  					imr.rotate(intAngle);
-		  				}
-		  				
-		  			}catch(Exception e){
-		  				//LOG.error("Exception encountered while rotating!");
-		  			}
+	private void processImageNew(ProcessingImage image,String key, String value) {
+	    switch (validactions.valueOf(key)) {
+	       case crop :
+        	   doCrop(image,value);
+	    	   break;
+           case scale :
+        	   doScale(image,value);
+        	   break;
+           case adjust :
+        	   break;
+           case rotate :
+        	   break;
+           case transparent :
+        	   break;
+           case compress :
+        	   doCompress(image,value);
+        	   break;
+           case recompress :
+        	   doRecompress(image,value);
+        	   break;
+           case original:
+        	   break;    	 
+       }
 
-		        	  break;
-		        	  
-	           case transparent :
-		        	  //System.out.println("DO TRANSPARENT"); 
-		        	  try{
-		  				float val = Float.parseFloat(value);
-		  				if (val > AlphaComposite.SRC_OVER || val < 0) {
-		  					//error = true;
-		  					//LOG.error("Invalid transparency value: value should be between 0 to 1");
-		  				} else {
-		  					imr.transparent(val);
-		  				}
-		  			}catch(Exception e){
-		  				//LOG.error("Exception encountered while making an image transparent!");
-		  			}
-		        	  break;
-		        	  
-	           case compress :
-		        	  //System.out.println("DO COMPRESS"); 
-		        	  try{
-		  				float cVal = Float.parseFloat(value);
-		  				if (cVal < 0 || cVal > 1) {
-		  					//error = true;
-		  					//LOG.error("Invalid compression value: value should be between 0 to 1");
-		  				} else {
-		  					imr.compress(cVal);
-		  				}
-		  			}catch(Exception e){
-		  				//LOG.error("Exception encountered compressing!");
-		  			}
-		        	  break;
-	           case original:
-	        	   break;
-		        	 
-	       }
+	}
+	
+	private void doScale(ProcessingImage image,String value) {
+			String[] params = value.split("x");
+			try {
+				int newWidth = Integer.parseInt(params[0]);
+				int newHeight = Integer.parseInt(params[1]);
+				image.workingImage = org.imgscalr.Scalr.resize(image.workingImage,Scalr.Method.QUALITY,Scalr.Mode.FIT_EXACT,newWidth, newHeight,Scalr.OP_ANTIALIAS);
+			} catch(Exception e) {
+				
+			}
+	}
+	
+	private void doCrop(ProcessingImage image,String value) {
+		String[] params = value.split("x");
+		try {
+			String cXco = params[0];
+			String cYco = params[1];
+			String cWidth = params[2];
+			String cHeight = params[3];
+			int x = Integer.parseInt(cXco);
+			int y = Integer.parseInt(cYco);
+			int w = Integer.parseInt(cWidth);
+			int h = Integer.parseInt(cHeight);
+			image.workingImage = org.imgscalr.Scalr.crop(image.workingImage, x, y, w, h);
+		} catch(Exception e) {
+			
+		}
+}
+	
+	private void doCompress(ProcessingImage image,String value) {
+  	  try{
+			float cVal = Float.parseFloat(value);
+			if (cVal < 0 || cVal > 1) {
+				System.out.println("edna: compress only valid between 0 and 1");
+			} else {
+				image.iwparam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+			    image.iwparam.setCompressionQuality(cVal);
+			}
+		}catch(Exception e){
+		}
+	}
+	
+	private void doRecompress(ProcessingImage image,String value) {
+	  	  image.recompress = value;
 	}
 
-	
 	
 
 	/** parse parameters from script (xml parsing) */
@@ -321,10 +269,6 @@ public class EdnaManager {
 			cmdstring+="-"+commands[i];
 		}
 		
-		//System.out.println("imagepath="+imagepath);
-		//System.out.println("cmdstring="+cmdstring);
-		//System.out.println("ext="+extension);
-		//System.out.println("TOTAL="+ basedir+imagepath+"/"+cmdstring+extension);
 		return basedir+imagepath+"/"+cmdstring+extension;
 	}
 	
@@ -332,9 +276,7 @@ public class EdnaManager {
 		try {
 			response.setHeader("Cache-Control", "no-transform,public,max-age=86400,s-maxage=86400");
 			response.setContentType(setCorrectExtention(file.getName()));
-			//response.setContentType("image/jpeg");
 			response.setContentLength((int)file.length());
-			System.out.println("SIZE="+file.length());
 			FileInputStream in = new FileInputStream(file);    
 			OutputStream out = response.getOutputStream();
 			byte[] buf = new byte[10240];    
@@ -373,7 +315,7 @@ public class EdnaManager {
 				}
 			}
 		} catch(Exception e) {
-			//e.printStackTrace();
+			e.printStackTrace();
 			return false;
 		}	
 		return true;
@@ -382,7 +324,6 @@ public class EdnaManager {
 	private String setCorrectExtention(String name) {
 		String ext = name.substring(name.lastIndexOf(".")+1);
 		ext = ext.toLowerCase();
-		System.out.println("EXT="+ext);
 		if (ext.equals("jpg")) {
 			return("image/jpeg");
 		} else if (ext.equals("svg")) {
