@@ -16,7 +16,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import javax.imageio.ImageWriteParam;
 import javax.servlet.http.HttpServletRequest;
@@ -41,6 +43,7 @@ public class EdnaManager {
 	private static EdnaManager instance;
 	private static HashMap<String, String> scriptcommands = null;
 	private int counter = 0;
+	private HashMap<String, String> urlParams = new HashMap<String, String>();
 	
 	private EdnaManager() {
         System.out.println("Edna Manager started");
@@ -56,8 +59,8 @@ public class EdnaManager {
 	
 	public void sendImageBasedOnURL(String image,HttpServletRequest request,HttpServletResponse response) {
 		String commands[] = null;
+		this.parseUrlParameters(request);
 		
-
 		String script = request.getParameter("script");
 		if (script!=null) {
 			commands = applyScript(script);
@@ -211,13 +214,46 @@ public class EdnaManager {
 	  	  image.recompress = value;
 	}
 	
+	private void parseUrlParameters(HttpServletRequest request){
+		System.out.println("--------------THIS IS URL PARAMETERS------------------");
+
+		for(Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+		    String key = entry.getKey();
+		    String[] value = entry.getValue();
+		    String rs = "";
+		    for(int i = 0; i < value.length; i++){
+		    	rs = value[i];
+		    }
+		    System.out.println("KEY:" + key + " : " + "VALUE:" + rs);
+		    urlParams.put(key, rs);
+		}
+		
+		System.out.println(urlParams);
+	}
+	
 	private void doCreateMeme(ProcessingImage image,String value){
 		System.out.println("-------------WE ARE IN THE GAME---------------");
 		System.out.println("THIS IS VALUE: "  + value);
-		burnStringInToImage(image,"Shukri","Serif",70);
+		String memeText = urlParams.get("txt");
+		int memeFontSize = Integer.parseInt(urlParams.get("fs"));
+		if(memeFontSize <= 0){
+			memeFontSize = 40;
+		}
+		String memeFontType = urlParams.get("ft");
+		if(memeFontType == null || memeFontType == ""){
+			memeFontType = "serif";
+		}
+		int position = Integer.parseInt(urlParams.get("pos"));
+		if(position < 0 || position > 2){
+			position = 1;
+		}
+		
+		System.out.println("doCreateMime()");
+		System.out.println(memeText + " : " + memeFontType + " : " + memeFontSize);
+		burnStringInToImage(image,memeText,memeFontType,memeFontSize, position);
 	}
 	
-	private void burnStringInToImage(ProcessingImage image, String text, String fontType, int fontSize){
+	private void burnStringInToImage(ProcessingImage image, String text, String fontType, int fontSize, int positon){
 		System.out.println("BURNING IMAGE WIHT PARAMETERS: " + image.workingImage + text + fontType + fontSize);
 		int width = image.workingImage.getWidth();
 		int height = image.workingImage.getHeight();
@@ -229,8 +265,20 @@ public class EdnaManager {
 		g2.setColor(Color.white);
 		g2.setFont(font);
 		FontMetrics fm = g2.getFontMetrics();
+		int d = 0;
+		switch(positon){
+			case 0:
+					d = image.workingImage.getHeight() - 40;
+				break;
+			case 1:
+					d = image.workingImage.getHeight() / 2;
+				break;
+			case 2:
+					d= image.workingImage.getHeight() / 4;
+				break;
+		}
 		int x = (image.workingImage.getWidth() - fm.stringWidth(text)) / 2;
-		int y = image.workingImage.getHeight() - 100;
+		int y = image.workingImage.getHeight() - d;
 		g2.drawString(text, x, y);
 		g2.dispose();
 	}
