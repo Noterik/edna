@@ -76,7 +76,5 @@ public class ProcessingImage {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-	}
-	
-	
+	}	
 }

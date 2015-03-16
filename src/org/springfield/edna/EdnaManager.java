@@ -1,6 +1,15 @@
 package org.springfield.edna;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,7 +37,7 @@ import org.w3c.dom.NodeList;
 
 public class EdnaManager {
 	
-	private enum validactions { crop,scale, adjust, rotate, transparent, compress, original,recompress; }
+	private enum validactions { crop,scale, adjust, rotate, transparent, compress, original,recompress, creatememe; }
 	private static EdnaManager instance;
 	private static HashMap<String, String> scriptcommands = null;
 	private int counter = 0;
@@ -127,6 +136,8 @@ public class EdnaManager {
 	}
 	
 	private void processImageNew(ProcessingImage image,String key, String value) {
+		System.out.println("KEY FOR ENUMERATION: " + key);
+		System.out.println("VALUE FOR ENUMERATiON: " + value);
 	    switch (validactions.valueOf(key)) {
 	       case crop :
         	   doCrop(image,value);
@@ -147,7 +158,10 @@ public class EdnaManager {
         	   doRecompress(image,value);
         	   break;
            case original:
-        	   break;    	 
+        	   break;    
+           case creatememe:
+        	   doCreateMeme(image,value);
+        	   break;
        }
 
 	}
@@ -196,9 +210,32 @@ public class EdnaManager {
 	private void doRecompress(ProcessingImage image,String value) {
 	  	  image.recompress = value;
 	}
-
 	
+	private void doCreateMeme(ProcessingImage image,String value){
+		System.out.println("-------------WE ARE IN THE GAME---------------");
+		System.out.println("THIS IS VALUE: "  + value);
+		burnStringInToImage(image,"Shukri","Serif",70);
+	}
+	
+	private void burnStringInToImage(ProcessingImage image, String text, String fontType, int fontSize){
+		System.out.println("BURNING IMAGE WIHT PARAMETERS: " + image.workingImage + text + fontType + fontSize);
+		int width = image.workingImage.getWidth();
+		int height = image.workingImage.getHeight();
+		Font font = new Font(fontType, Font.BOLD, fontSize);
 
+		Graphics2D g2 = image.workingImage.createGraphics();
+		
+		g2.drawImage(image.workingImage, 0, 0, null);
+		g2.setColor(Color.white);
+		g2.setFont(font);
+		FontMetrics fm = g2.getFontMetrics();
+		int x = (image.workingImage.getWidth() - fm.stringWidth(text)) / 2;
+		int y = image.workingImage.getHeight() - 100;
+		g2.drawString(text, x, y);
+		g2.dispose();
+	}
+	
+	
 	/** parse parameters from script (xml parsing) */
 	private static HashMap<String, String> readCommandList() {
 		String filename = "/springfield/edna/config/cmdlist.xml";
@@ -331,6 +368,8 @@ public class EdnaManager {
 		}
 		return("image/jpeg");
 	}
+	
+
 
 	
 }
