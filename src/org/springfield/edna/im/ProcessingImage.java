@@ -47,6 +47,7 @@ public class ProcessingImage {
 			writer.dispose();
 		} catch (Exception e) {
 			System.out.println("Could not write to compressed output image "+filename);
+			e.printStackTrace();
 		}
 		
 		// ok so we now have it on filesystem, was recompressed asked ?

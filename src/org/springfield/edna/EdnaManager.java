@@ -11,9 +11,12 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.Arrays;
@@ -95,7 +98,24 @@ public class EdnaManager {
 		boolean download = false;
 		int pos = inputimage.indexOf("/external/");
 		if (pos==0) {
-			download = saveUrltoDisk(path+filename,"http://"+inputimage.substring(pos+10));
+			if (inputimage.indexOf(".pdf")!=-1) {
+				System.out.println("PDF="+inputimage);
+				int pos2 = inputimage.indexOf("[");
+				if (pos2!=-1) {
+					String slidenumber = inputimage.substring(pos2+1);
+					slidenumber = slidenumber.substring(0,slidenumber.indexOf("]"));
+					inputimage = inputimage.substring(0,pos2);
+					download = saveUrltoDisk(path+filename+".pdf","http://"+inputimage.substring(pos+10));
+					System.out.println("DOWNLOAD="+path+filename+" RESULT="+download+" SLIDENUMBER="+slidenumber);
+					if (download) {
+						// now get the correct image from the PDF
+						System.out.println("EXTRACTING CORRECT SLIDE !");
+						extractSlideFrom(path+filename+".pdf",path+filename,slidenumber);
+					}
+				}
+			} else {
+				download = saveUrltoDisk(path+filename,"http://"+inputimage.substring(pos+10));
+			}
 			if (inputimage.indexOf(".svg")!=-1) {
 				System.out.println("SVG detected");
 				// we should pass this untouched 
@@ -134,7 +154,7 @@ public class EdnaManager {
 			
 			image.writeToFile(diskname);
 			
-			tmpimage.delete();
+			//tmpimage.delete();
 		}
 	}
 	
@@ -379,6 +399,8 @@ public class EdnaManager {
 	}
 	
 	private boolean saveUrltoDisk(String filename,String url) {
+		System.out.println("FILENAME="+filename);
+		System.out.println("URL="+url);
 		try {
 			BufferedInputStream in = null;
 			FileOutputStream fout = null;
@@ -415,6 +437,29 @@ public class EdnaManager {
 			return("image/svg+xml");
 		}
 		return("image/jpeg");
+	}
+	
+	private boolean extractSlideFrom(String inputname,String outputname,String slidenumber) {
+		String cmd = "/usr/bin/convert";
+		cmd += " -density 400";
+		cmd += " "+inputname+"["+slidenumber+"]";
+		cmd += " jpg:"+outputname;
+
+		try {
+			Process child = Runtime.getRuntime().exec(cmd);
+			InputStream is = child.getErrorStream();
+			if (is != null) {
+				BufferedReader br = new BufferedReader( new InputStreamReader(is) );
+				String line;
+				while ((line = br.readLine()) != null) {
+					
+				}
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
 	}
 	
 
