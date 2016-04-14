@@ -99,6 +99,8 @@ public class EdnaManager {
 		int pos = inputimage.indexOf("/external/");
 		if (pos==0) {
 			if (inputimage.indexOf(".pdf")!=-1) {
+				inputimage = inputimage.replace("(","[");
+				inputimage = inputimage.replace(")","]");
 				System.out.println("PDF="+inputimage);
 				int pos2 = inputimage.indexOf("[");
 				if (pos2!=-1) {
