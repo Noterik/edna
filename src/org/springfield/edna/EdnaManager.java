@@ -193,12 +193,51 @@ public class EdnaManager {
 	
 	private void doScale(ProcessingImage image,String value) {
 			String[] params = value.split("x");
-			try {
-				int newWidth = Integer.parseInt(params[0]);
-				int newHeight = Integer.parseInt(params[1]);
-				image.workingImage = org.imgscalr.Scalr.resize(image.workingImage,Scalr.Method.QUALITY,Scalr.Mode.FIT_EXACT,newWidth, newHeight,Scalr.OP_ANTIALIAS);
-			} catch(Exception e) {
+			String width = params[0];
+			String height = params[1];
+			if (width.indexOf("!")==-1 && height.indexOf("!")==-1) { // so its a direct scale
+				try {
+					int newWidth = Integer.parseInt(width);
+					int newHeight = Integer.parseInt(height);
+					image.workingImage = org.imgscalr.Scalr.resize(image.workingImage,Scalr.Method.QUALITY,Scalr.Mode.FIT_EXACT,newWidth, newHeight,Scalr.OP_ANTIALIAS);
+				} catch(Exception e) {
 				
+				}
+			} else {
+				width = width.substring(0,width.length()-1);
+				height = height.substring(0,height.length()-1);
+				int cw = image.workingImage.getWidth();
+				int ch = image.workingImage.getHeight();
+				System.out.println("edna: WIDTH="+width+" HEIGHT="+height);
+				System.out.println("edna: WI="+image.workingImage.getWidth()+" HI="+image.workingImage.getHeight());
+				try {
+					int nw = Integer.parseInt(width);
+					int nh = Integer.parseInt(height);
+					// protect for silly scales if with or height is bigger then original we scale to that
+					if (cw<nw) { // scale on with is silly
+						if (ch>nh) { // height is bigger so scale on that
+							image.workingImage = org.imgscalr.Scalr.resize(image.workingImage,Scalr.Method.QUALITY,Scalr.Mode.FIT_TO_HEIGHT,nw, nh,Scalr.OP_ANTIALIAS);
+							System.out.println("Edna: scaled to height");
+						} else {
+							// we ignore scale both width and height is already smaller
+						}
+						
+					} else {
+						// ok so am i really the best option maybe height is worse ?
+						int dw = cw - nw;
+						int dh = ch - nh;
+						if (dw>dh) { // nope with is more pixels over 
+							image.workingImage = org.imgscalr.Scalr.resize(image.workingImage,Scalr.Method.QUALITY,Scalr.Mode.FIT_TO_WIDTH,nw, nh,Scalr.OP_ANTIALIAS);
+							System.out.println("Edna: scaled to width");
+						} else {
+							image.workingImage = org.imgscalr.Scalr.resize(image.workingImage,Scalr.Method.QUALITY,Scalr.Mode.FIT_TO_HEIGHT,nw, nh,Scalr.OP_ANTIALIAS);
+							System.out.println("Edna: scaled to height 2");
+						}
+					}
+				} catch(Exception e) {
+				
+				}
+				System.out.println("edna: WO="+image.workingImage.getWidth()+" HO="+image.workingImage.getHeight());
 			}
 	}
 	
