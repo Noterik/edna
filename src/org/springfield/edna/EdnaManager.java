@@ -101,17 +101,14 @@ public class EdnaManager {
 			if (inputimage.indexOf(".pdf")!=-1) {
 				inputimage = inputimage.replace("(","[");
 				inputimage = inputimage.replace(")","]");
-				System.out.println("PDF="+inputimage);
 				int pos2 = inputimage.indexOf("[");
 				if (pos2!=-1) {
 					String slidenumber = inputimage.substring(pos2+1);
 					slidenumber = slidenumber.substring(0,slidenumber.indexOf("]"));
 					inputimage = inputimage.substring(0,pos2);
 					download = saveUrltoDisk(path+filename+".pdf","http://"+inputimage.substring(pos+10));
-					System.out.println("DOWNLOAD="+path+filename+" RESULT="+download+" SLIDENUMBER="+slidenumber);
 					if (download) {
 						// now get the correct image from the PDF
-						System.out.println("EXTRACTING CORRECT SLIDE !");
 						extractSlideFrom(path+filename+".pdf",path+filename,slidenumber);
 					}
 				}
