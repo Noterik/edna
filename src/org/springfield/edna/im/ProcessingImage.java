@@ -3,6 +3,8 @@ package org.springfield.edna.im;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,11 +18,18 @@ import javax.imageio.ImageWriter;
 import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
 import javax.imageio.stream.FileImageOutputStream;
 
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+
 public class ProcessingImage {
 	
 	public BufferedImage workingImage = null;
 	public ImageWriteParam iwparam = new JPEGImageWriteParam(Locale.getDefault());
 	public String recompress = null;
+	public String amazons3 = null;
 
 	public ProcessingImage(File inputfile) {
 		try {
@@ -54,6 +63,37 @@ public class ProcessingImage {
 		if (recompress!=null) {
 			doRecompress(tmpfilename,filename,recompress);
 			dest.delete(); // delete the _temp file
+		}
+		
+		// ok so we now have it on filesystem, was recompressed asked ?
+		if (amazons3!=null) {
+			doAmazonS3(tmpfilename,filename,recompress);
+			//dest.delete(); // delete the _temp file
+		}
+		
+	}
+	
+	private void doAmazonS3(String inputname,String outputname,String options) {
+		String bucketname = "springfield-storage";
+		String filename = amazons3+outputname.substring(outputname.indexOf("/external/")+9)+".jpg";
+		
+		AmazonS3 s3Client = AmazonS3ClientBuilder.standard().withCredentials(new EnvironmentVariableCredentialsProvider()).build();
+
+		
+		ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentType("image/jpeg");
+		
+		File dest = new File(outputname);
+		if (dest != null) {
+			try {
+			InputStream in = new FileInputStream(dest);
+			PutObjectRequest or = new PutObjectRequest(bucketname,filename,in, metadata);
+			s3Client.putObject(or);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		} else {
+			System.out.println("DEST NOT FOUND="+inputname+" "+outputname);
 		}
 	}
 	

@@ -42,7 +42,7 @@ import org.w3c.dom.NodeList;
 
 public class EdnaManager {
 	
-	private enum validactions { crop,scale, adjust, rotate, transparent, compress, original,recompress, creatememe; }
+	private enum validactions { crop,scale, adjust, rotate, transparent, compress, original,recompress, creatememe,amazons3; }
 	private static EdnaManager instance;
 	private static HashMap<String, String> scriptcommands = null;
 	private int counter = 0;
@@ -179,6 +179,9 @@ public class EdnaManager {
            case recompress :
         	   doRecompress(image,value);
         	   break;
+           case amazons3 :
+        	   doAmazonS3(image,value);
+        	   break;
            case original:
         	   break;    
            case creatememe:
@@ -287,6 +290,11 @@ public class EdnaManager {
 		}
 		
 		System.out.println(urlParams);
+	}
+	
+	private void doAmazonS3(ProcessingImage image,String value) {
+		System.out.println("DO AMAZONCALLED");
+	  	  image.amazons3 = value;
 	}
 	
 	private void doCreateMeme(ProcessingImage image,String value){
