@@ -23,6 +23,6 @@
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/mojo.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/imgscalr-lib-4.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/aws-java-sdk-1.11.66.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/aws-java-sdk-1.11.220.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
