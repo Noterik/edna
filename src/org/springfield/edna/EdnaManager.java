@@ -8,6 +8,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.BufferedInputStream;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import javax.imageio.ImageWriteParam;
+import javax.media.j3d.RotationInterpolator;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
@@ -33,11 +35,21 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.imgscalr.Scalr;
+import org.imgscalr.Scalr.Rotation;
 import org.springfield.edna.im.ProcessingImage;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.metadata.Directory;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.MetadataException;
+import com.drew.metadata.exif.ExifIFD0Directory;
+import com.drew.metadata.jpeg.JpegDirectory;
+
+
 
 
 public class EdnaManager {
@@ -136,7 +148,27 @@ public class EdnaManager {
 		if (download) {
 		
 			File tmpimage = new File(path+filename);
+			System.out.println("READ EXIF DATA HERE ="+ readImageOrientation(tmpimage));
+			int cameraorientation = readImageOrientation(tmpimage);
+
 			ProcessingImage image = new ProcessingImage(tmpimage);
+			
+			// auto rotate first ?
+			
+			if (cameraorientation!=1) {
+			    switch (cameraorientation) {
+			    	case 3:
+						processImageNew(image,"rotate","180");
+			    		break;
+			    	case 6:
+						processImageNew(image,"rotate","90");
+			    		break;
+			    	case 8:
+						processImageNew(image,"rotate","270");
+			    		break;
+				}
+			}
+			
 		
 			for (int i=0;i<commands.length;i++) { // needs minimal 2 commands ?
 				String[] command = commands[i].split("=");
@@ -170,6 +202,7 @@ public class EdnaManager {
            case adjust :
         	   break;
            case rotate :
+        	   doRotate(image,value);
         	   break;
            case transparent :
         	   break;
@@ -239,6 +272,31 @@ public class EdnaManager {
 				}
 				System.out.println("edna: WO="+image.workingImage.getWidth()+" HO="+image.workingImage.getHeight());
 			}
+	}
+	
+	private void doRotate(ProcessingImage image, String value) {
+		try {
+			int rotation = Integer.parseInt(value);
+			 AffineTransformOp[] xform = null;
+			 Rotation rot = null;
+			switch(rotation){
+				case 90:
+					rot = Rotation.CW_90;
+					break;
+				case 180:
+					rot = Rotation.CW_180;
+					break;
+				case 270:
+					rot = Rotation.CW_270;
+					break;
+			}
+			 
+			image.workingImage = org.imgscalr.Scalr.rotate(image.workingImage, rot,xform);
+				
+			
+		} catch(Exception e) {
+			
+		}
 	}
 	
 	private void doCrop(ProcessingImage image,String value) {
@@ -506,6 +564,19 @@ public class EdnaManager {
 			return false;
 		}
 		return true;
+	}
+	
+	public static int readImageOrientation(File imageFile)  {
+	    try {	
+	    	Metadata metadata = ImageMetadataReader.readMetadata(imageFile);
+	    	Directory directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
+	    	JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
+
+	       return  directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
+	    } catch (Exception e) {
+	    	e.printStackTrace();
+	    }
+	    return 1;
 	}
 	
 

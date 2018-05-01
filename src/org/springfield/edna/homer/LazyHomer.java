@@ -132,7 +132,7 @@ public class LazyHomer implements MargeObserver {
 			if (mp!=null && mp.getStatus().equals("on")) {
 				if (!running) {
 					running = true;
-					LOG.info("This uter will be started (on startup)");
+					LOG.info("This edna will be started (on startup)");
 				}
 			} else {
 				if (running) {
