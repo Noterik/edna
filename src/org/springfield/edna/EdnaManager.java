@@ -148,9 +148,12 @@ public class EdnaManager {
 		if (download) {
 		
 			File tmpimage = new File(path+filename);
-			System.out.println("READ EXIF DATA HERE ="+ readImageOrientation(tmpimage));
-			int cameraorientation = readImageOrientation(tmpimage);
+			int cameraorientation = 1;
+			cameraorientation = readImageOrientation(tmpimage);
 
+
+			//int cameraorientation = 1;
+			
 			ProcessingImage image = new ProcessingImage(tmpimage);
 			
 			// auto rotate first ?
@@ -568,14 +571,18 @@ public class EdnaManager {
 	
 	public static int readImageOrientation(File imageFile)  {
 	    try {	
+	    	try {
 	    	Metadata metadata = ImageMetadataReader.readMetadata(imageFile);
 	    	Directory directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
 	    	JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
 
-	       return  directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
+	        return  directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
+	    	} catch(NoClassDefFoundError e2) {
+	    		
+	    	}
 	    } catch (Exception e) {
-	    	e.printStackTrace();
-	    }
+	    	//e.printStackTrace();
+	    } 
 	    return 1;
 	}
 	
