@@ -49,7 +49,6 @@ public class ProcessingImage {
 	}
 	
 	public void writeToFile(String filename) {
-		System.out.println("Write to file : "+filename);
 		String tmpfilename = filename;
 		
 		if (recompress!=null) tmpfilename +="_temp"; // we need to recompress

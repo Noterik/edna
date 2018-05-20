@@ -19,7 +19,9 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -84,7 +86,7 @@ public class EdnaManager {
 		if(commands==null) { //Apply default command = thumbnail
 			commands = applyScript("thumbnail");
 		}
-				
+		image = image.replace("%22","?");
 		String diskname = getOutputName(image,commands);
 		File file = new File(diskname);
 		if (file.exists()) {
@@ -125,10 +127,16 @@ public class EdnaManager {
 					}
 				}
 			} else {
-				download = saveUrltoDisk(path+filename,"http://"+inputimage.substring(pos+10));
+				//System.out.println("EDNA HTTPS CHECK="+inputimage.substring(pos+10));
+				String spath = inputimage.substring(pos+10);
+				if (spath.startsWith("s/")) {
+					download = saveUrltoDisk(path+filename,"https://"+inputimage.substring(pos+12));		
+				} else {
+					download = saveUrltoDisk(path+filename,"http://"+inputimage.substring(pos+10));
+				}
 			}
 			if (inputimage.indexOf(".svg")!=-1) {
-				System.out.println("SVG detected");
+				//System.out.println("SVG detected");
 				// we should pass this untouched 
 				File tmpimage = new File(path+filename); 
 				String dirname = diskname.substring(0,diskname.lastIndexOf("/"));
@@ -193,8 +201,6 @@ public class EdnaManager {
 	}
 	
 	private void processImageNew(ProcessingImage image,String key, String value) {
-		System.out.println("KEY FOR ENUMERATION: " + key);
-		System.out.println("VALUE FOR ENUMERATiON: " + value);
 	    switch (validactions.valueOf(key)) {
 	       case crop :
         	   doCrop(image,value);
@@ -244,8 +250,6 @@ public class EdnaManager {
 				height = height.substring(0,height.length()-1);
 				int cw = image.workingImage.getWidth();
 				int ch = image.workingImage.getHeight();
-				System.out.println("edna: WIDTH="+width+" HEIGHT="+height);
-				System.out.println("edna: WI="+image.workingImage.getWidth()+" HI="+image.workingImage.getHeight());
 				try {
 					int nw = Integer.parseInt(width);
 					int nh = Integer.parseInt(height);
@@ -253,7 +257,6 @@ public class EdnaManager {
 					if (cw<nw) { // scale on with is silly
 						if (ch>nh) { // height is bigger so scale on that
 							image.workingImage = org.imgscalr.Scalr.resize(image.workingImage,Scalr.Method.QUALITY,Scalr.Mode.FIT_TO_HEIGHT,nw, nh,Scalr.OP_ANTIALIAS);
-							System.out.println("Edna: scaled to height");
 						} else {
 							// we ignore scale both width and height is already smaller
 						}
@@ -264,16 +267,13 @@ public class EdnaManager {
 						int dh = ch - nh;
 						if (dw>dh) { // nope with is more pixels over 
 							image.workingImage = org.imgscalr.Scalr.resize(image.workingImage,Scalr.Method.QUALITY,Scalr.Mode.FIT_TO_WIDTH,nw, nh,Scalr.OP_ANTIALIAS);
-							System.out.println("Edna: scaled to width");
 						} else {
 							image.workingImage = org.imgscalr.Scalr.resize(image.workingImage,Scalr.Method.QUALITY,Scalr.Mode.FIT_TO_HEIGHT,nw, nh,Scalr.OP_ANTIALIAS);
-							System.out.println("Edna: scaled to height 2");
 						}
 					}
 				} catch(Exception e) {
 				
 				}
-				System.out.println("edna: WO="+image.workingImage.getWidth()+" HO="+image.workingImage.getHeight());
 			}
 	}
 	
@@ -337,8 +337,6 @@ public class EdnaManager {
 	}
 	
 	private void parseUrlParameters(HttpServletRequest request){
-		System.out.println("--------------THIS IS URL PARAMETERS------------------");
-
 		for(Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
 		    String key = entry.getKey();
 		    String[] value = entry.getValue();
@@ -346,21 +344,15 @@ public class EdnaManager {
 		    for(int i = 0; i < value.length; i++){
 		    	rs = value[i];
 		    }
-		    System.out.println("KEY:" + key + " : " + "VALUE:" + rs);
 		    urlParams.put(key, rs);
 		}
-		
-		System.out.println(urlParams);
 	}
 	
 	private void doAmazonS3(ProcessingImage image,String value) {
-		System.out.println("DO AMAZONCALLED");
 	  	  image.amazons3 = value;
 	}
 	
 	private void doCreateMeme(ProcessingImage image,String value){
-		System.out.println("-------------WE ARE IN THE GAME---------------");
-		System.out.println("THIS IS VALUE: "  + value);
 		String memeText = urlParams.get("txt");
 		int memeFontSize = Integer.parseInt(urlParams.get("fs"));
 		if(memeFontSize <= 0){
@@ -375,13 +367,10 @@ public class EdnaManager {
 			position = 1;
 		}
 		
-		System.out.println("doCreateMime()");
-		System.out.println(memeText + " : " + memeFontType + " : " + memeFontSize);
 		burnStringInToImage(image,memeText,memeFontType,memeFontSize, position);
 	}
 	
 	private void burnStringInToImage(ProcessingImage image, String text, String fontType, int fontSize, int positon){
-		System.out.println("BURNING IMAGE WIHT PARAMETERS: " + image.workingImage + text + fontType + fontSize);
 		int width = image.workingImage.getWidth();
 		int height = image.workingImage.getHeight();
 		Font font = new Font(fontType, Font.BOLD, fontSize);
@@ -467,15 +456,18 @@ public class EdnaManager {
 	}
 
 	private String getOutputName(String filename, String[] commands) {
-
+		String extension = "";
 		String basedir = "/springfield/edna/outputimages";
 		int pos = filename.lastIndexOf("/");
 		String imagepath = filename.substring(0,pos);
 		
 		String cmdstring = filename.substring(pos+1);
 		int pos2 = cmdstring.indexOf(".");
-		String extension = cmdstring.substring(pos2);
-		cmdstring = cmdstring.substring(0,pos2);
+		
+		if (pos2!=-1) {
+			extension = cmdstring.substring(pos2);
+			cmdstring = cmdstring.substring(0,pos2);
+		}
 		
 		for (int i=0;i<commands.length;i++) {
 			cmdstring+="-"+commands[i];
@@ -506,13 +498,27 @@ public class EdnaManager {
 	}
 	
 	private boolean saveUrltoDisk(String filename,String url) {
-		System.out.println("FILENAME="+filename);
-		System.out.println("URL="+url);
 		try {
 			BufferedInputStream in = null;
 			FileOutputStream fout = null;
 			try {
-				in = new BufferedInputStream(new URL(url).openStream());
+			    URL urlo = new URL(url);
+			    HttpURLConnection oc = (HttpURLConnection) urlo.openConnection();
+				oc.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
+
+			    int code = oc.getResponseCode();
+			    if (code==301) {
+			    	String redirect = oc.getHeaderField("Location");
+				    urlo = new URL(redirect);
+				    oc = (HttpURLConnection) urlo.openConnection();
+					oc.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
+
+			    }
+			   // HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+			    //HttpURLConnection oc = new URL(url).openConnection(); // lets simulate a browswer more to avoid 403 traps
+				//oc.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
+				in = new BufferedInputStream(oc.getInputStream());
+				oc.getResponseCode();
 				fout = new FileOutputStream(filename);
 
 				final byte data[] = new byte[1024];
