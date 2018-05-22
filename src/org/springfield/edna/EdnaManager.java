@@ -514,9 +514,6 @@ public class EdnaManager {
 					oc.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
 
 			    }
-			   // HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-			    //HttpURLConnection oc = new URL(url).openConnection(); // lets simulate a browswer more to avoid 403 traps
-				//oc.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
 				in = new BufferedInputStream(oc.getInputStream());
 				oc.getResponseCode();
 				fout = new FileOutputStream(filename);
