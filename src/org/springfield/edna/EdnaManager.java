@@ -28,6 +28,8 @@ import java.util.Map.Entry;
 
 import javax.imageio.ImageWriteParam;
 import javax.media.j3d.RotationInterpolator;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
@@ -506,7 +508,13 @@ public class EdnaManager {
 			    HttpURLConnection oc = (HttpURLConnection) urlo.openConnection();
 				oc.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
 
-			    int code = oc.getResponseCode();
+				try {
+				int code = 0;
+				try {
+					code = oc.getResponseCode();
+				} catch(SSLException e2) {
+					System.out.println("supress sec. exception");
+				}
 			    if (code==301) {
 			    	String redirect = oc.getHeaderField("Location");
 				    urlo = new URL(redirect);
@@ -514,8 +522,11 @@ public class EdnaManager {
 					oc.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
 
 			    }
+				} catch(Exception e) {
+					System.out.println("could not get return code doing a ignore");
+				}
 				in = new BufferedInputStream(oc.getInputStream());
-				oc.getResponseCode();
+				//oc.getResponseCode();
 				fout = new FileOutputStream(filename);
 
 				final byte data[] = new byte[1024];
