@@ -51,10 +51,8 @@ import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.exif.ExifIFD0Directory;
+import com.drew.metadata.exif.ExifInteropDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
-
-
-
 
 public class EdnaManager {
 	
@@ -167,8 +165,8 @@ public class EdnaManager {
 			ProcessingImage image = new ProcessingImage(tmpimage);
 			
 			// auto rotate first ?
-			
 			if (cameraorientation!=1) {
+
 			    switch (cameraorientation) {
 			    	case 3:
 						processImageNew(image,"rotate","180");
@@ -589,13 +587,21 @@ public class EdnaManager {
 	    	Metadata metadata = ImageMetadataReader.readMetadata(imageFile);
 	    	Directory directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
 	    	JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
-
+	    	if (directory.containsTag(ExifInteropDirectory.TAG_EXPOSURE_PROGRAM)) {
+	    		System.out.println("CR="+directory.getInt(ExifInteropDirectory.TAG_EXPOSURE_PROGRAM));
+	    	}
+	    	if (directory.containsTag(ExifInteropDirectory.TAG_CUSTOM_RENDERED)) {
+	    		System.out.println("CR="+directory.getInt(ExifInteropDirectory.TAG_CUSTOM_RENDERED));
+	    	}
+	    	if (directory.containsTag(ExifInteropDirectory.TAG_SCENE_CAPTURE_TYPE)) {
+	    		System.out.println("CCT="+directory.getInt(ExifInteropDirectory.TAG_SCENE_CAPTURE_TYPE));
+	    	}
 	        return  directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
 	    	} catch(NoClassDefFoundError e2) {
 	    		
 	    	}
 	    } catch (Exception e) {
-	    	//e.printStackTrace();
+	    	e.printStackTrace();
 	    } 
 	    return 1;
 	}
