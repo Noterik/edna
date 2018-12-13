@@ -108,7 +108,8 @@ public class EdnaManager {
 	
 		String path = "/springfield/edna/tmpimages/";
 		String filename = ""+(counter++); // simple counter to make sure filenames are new each time. files are deleted when done
-
+		String extension = getExtension(inputimage);
+		
 		boolean download = false;
 		int pos = inputimage.indexOf("/external/");
 		if (pos==0) {
@@ -162,7 +163,7 @@ public class EdnaManager {
 
 			//int cameraorientation = 1;
 			
-			ProcessingImage image = new ProcessingImage(tmpimage);
+			ProcessingImage image = new ProcessingImage(tmpimage, extension);
 			
 			// auto rotate first ?
 			
@@ -589,7 +590,16 @@ public class EdnaManager {
 	    return 1;
 	}
 	
-
+	public String getExtension(String filename) {
+		String extension = "";
+		
+		int i = filename.lastIndexOf('.');
+		if (i > 0) {
+		    extension = filename.substring(i+1);
+		}
+		
+		return extension;
+	}
 
 	
 }

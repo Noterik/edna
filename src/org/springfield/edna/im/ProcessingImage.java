@@ -30,19 +30,20 @@ public class ProcessingImage {
 	public String recompress = null;
 	public String amazons3 = null;
 
-	public ProcessingImage(File inputfile) {
+	public ProcessingImage(File inputfile, String extension) {
 		try {
-			BufferedImage originalImage = ImageIO.read(inputfile);
+			//BufferedImage originalImage = ImageIO.read(inputfile);
+			workingImage = ImageIO.read(inputfile);
 			
 			//OpenJDK, unless Oracle JDK, has an issue with files containing transparancy bits (gif, png)
 			//for this reason we convert all images to 3 byte RGB, ditching the transparancy bit.
 			// https://stackoverflow.com/questions/3432388/imageio-not-able-to-write-a-jpeg-file/17845696
-			int width = originalImage.getWidth();
+			/*int width = originalImage.getWidth();
 			int height = originalImage.getHeight();
 			int[] rgb = originalImage.getRGB(0, 0, width, height, null, 0, width);
 			
 			workingImage = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
-			workingImage.setRGB(0, 0, width, height, rgb, 0, width);
+			workingImage.setRGB(0, 0, width, height, rgb, 0, width);*/
 		} catch (IOException e) {
 			System.out.println("Could not read input image :"+inputfile.getAbsolutePath());
 		}
