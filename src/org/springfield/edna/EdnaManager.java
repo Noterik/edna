@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import javax.imageio.ImageWriteParam;
-import javax.media.j3d.RotationInterpolator;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 import javax.servlet.http.HttpServletRequest;
@@ -513,6 +512,9 @@ public class EdnaManager {
 				} catch(SSLException e2) {
 					System.out.println("supress sec. exception");
 				}
+				
+				System.out.println("Received response code "+code+" for url = "+url);
+				
 			    if (code==301) {
 			    	String redirect = oc.getHeaderField("Location");
 				    urlo = new URL(redirect);
@@ -584,19 +586,23 @@ public class EdnaManager {
 	public static int readImageOrientation(File imageFile)  {
 	    try {	
 	    	try {
-	    	Metadata metadata = ImageMetadataReader.readMetadata(imageFile);
-	    	Directory directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
-	    	JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
-	    	if (directory.containsTag(ExifInteropDirectory.TAG_EXPOSURE_PROGRAM)) {
-	    		System.out.println("CR="+directory.getInt(ExifInteropDirectory.TAG_EXPOSURE_PROGRAM));
-	    	}
-	    	if (directory.containsTag(ExifInteropDirectory.TAG_CUSTOM_RENDERED)) {
-	    		System.out.println("CR="+directory.getInt(ExifInteropDirectory.TAG_CUSTOM_RENDERED));
-	    	}
-	    	if (directory.containsTag(ExifInteropDirectory.TAG_SCENE_CAPTURE_TYPE)) {
-	    		System.out.println("CCT="+directory.getInt(ExifInteropDirectory.TAG_SCENE_CAPTURE_TYPE));
-	    	}
-	        return  directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
+		    	Metadata metadata = ImageMetadataReader.readMetadata(imageFile);
+		    	Directory directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
+		    	JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
+		    	if (directory != null) {		    	
+			    	if (directory.containsTag(ExifInteropDirectory.TAG_EXPOSURE_PROGRAM)) {
+			    		System.out.println("CR="+directory.getInt(ExifInteropDirectory.TAG_EXPOSURE_PROGRAM));
+			    	}
+			    	if (directory.containsTag(ExifInteropDirectory.TAG_CUSTOM_RENDERED)) {
+			    		System.out.println("CR="+directory.getInt(ExifInteropDirectory.TAG_CUSTOM_RENDERED));
+			    	}
+			    	if (directory.containsTag(ExifInteropDirectory.TAG_SCENE_CAPTURE_TYPE)) {
+			    		System.out.println("CCT="+directory.getInt(ExifInteropDirectory.TAG_SCENE_CAPTURE_TYPE));
+			    	}
+			    	if (directory.containsTag(ExifIFD0Directory.TAG_ORIENTATION)) {
+			    		return  directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
+			    	}
+		    	}
 	    	} catch(NoClassDefFoundError e2) {
 	    		
 	    	}
