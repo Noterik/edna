@@ -85,7 +85,7 @@ public class EdnaManager {
 		if(commands==null) { //Apply default command = thumbnail
 			commands = applyScript("thumbnail");
 		}
-		image = image.replace("%22","?");
+		image = image.replace("%3F","?");
 		String diskname = getOutputName(image,commands);
 		File file = new File(diskname);
 		if (file.exists()) {
@@ -100,8 +100,7 @@ public class EdnaManager {
 				sendFile(file,response);
 			}
 		}
-	}	
-	
+	}
 	
 	private void generateImageOnDisk(String inputimage,String diskname,String[] commands) {
 	
@@ -515,7 +514,8 @@ public class EdnaManager {
 				
 				System.out.println("Received response code "+code+" for url = "+url);
 				
-			    if (code==301) {
+				//handle redirects
+			    if (code == 301 || code == 302) {
 			    	String redirect = oc.getHeaderField("Location");
 				    urlo = new URL(redirect);
 				    oc = (HttpURLConnection) urlo.openConnection();
