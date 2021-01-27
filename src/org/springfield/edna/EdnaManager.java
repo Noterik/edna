@@ -607,7 +607,7 @@ public class EdnaManager {
 	    		
 	    	}
 	    } catch (Exception e) {
-	    	e.printStackTrace();
+	    	//e.printStackTrace();
 	    } 
 	    return 1;
 	}
