@@ -512,7 +512,7 @@ public class EdnaManager {
 					System.out.println("supress sec. exception");
 				}
 				
-				System.out.println("Received response code "+code+" for url = "+url);
+				//System.out.println("Received response code "+code+" for url = "+url);
 				
 				//handle redirects
 			    if (code == 301 || code == 302) {
