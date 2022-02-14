@@ -19,9 +19,11 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -62,7 +64,7 @@ public class EdnaManager {
 	private HashMap<String, String> urlParams = new HashMap<String, String>();
 	
 	private EdnaManager() {
-        System.out.println("Edna Manager started");
+        System.out.println("Edna Manager 14feb2022 started");
 		if (scriptcommands == null) {
 			scriptcommands = readCommandList();
 		}
@@ -98,12 +100,22 @@ public class EdnaManager {
 			file = new File(diskname);	
 			if (file.exists()) {
 				sendFile(file,response);
+			} else {
+				try {
+					Thread.sleep(1000);
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+				System.out.println("IMAGE RETRY TOO FAST");
+				file = new File(diskname);	
+				if (file.exists()) {
+					sendFile(file,response);
+				}
 			}
 		}
 	}
 	
 	private void generateImageOnDisk(String inputimage,String diskname,String[] commands) {
-	
 		String path = "/springfield/edna/tmpimages/";
 		String filename = ""+(counter++); // simple counter to make sure filenames are new each time. files are deleted when done
 
@@ -125,7 +137,6 @@ public class EdnaManager {
 					}
 				}
 			} else {
-				//System.out.println("EDNA HTTPS CHECK="+inputimage.substring(pos+10));
 				String spath = inputimage.substring(pos+10);
 				if (spath.startsWith("s/")) {
 					download = saveUrltoDisk(path+filename,"https://"+inputimage.substring(pos+12));		
@@ -150,7 +161,6 @@ public class EdnaManager {
 			if (!download) { download = saveUrltoDisk(path+filename,"http://images2.noterik.com/"+inputimage); }
 			if (!download) { download = saveUrltoDisk(path+filename,"http://images3.noterik.com/"+inputimage); }
 		}
-		
 		if (download) {
 		
 			File tmpimage = new File(path+filename);
@@ -454,6 +464,22 @@ public class EdnaManager {
 	}
 
 	private String getOutputName(String filename, String[] commands) {
+		if  (filename.length()>150) {
+			try {
+			MessageDigest m = MessageDigest.getInstance("MD5");
+			m.reset();
+			m.update(filename.getBytes());
+			byte[] digest = m.digest();
+			BigInteger bigInt = new BigInteger(1,digest);
+			String hashtext = bigInt.toString(16);
+			while(hashtext.length() < 32 ){
+			  hashtext = "0"+hashtext;
+			}
+			filename = "/external/s/md5.qandr.eu/"+hashtext;
+			} catch(Exception e ) {
+				e.printStackTrace();
+			}
+		}
 		String extension = "";
 		String basedir = "/springfield/edna/outputimages";
 		int pos = filename.lastIndexOf("/");
@@ -470,7 +496,6 @@ public class EdnaManager {
 		for (int i=0;i<commands.length;i++) {
 			cmdstring+="-"+commands[i];
 		}
-		
 		return basedir+imagepath+"/"+cmdstring+extension;
 	}
 	

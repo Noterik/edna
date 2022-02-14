@@ -87,7 +87,6 @@ public class ProcessingImage {
 		
 		AmazonS3 s3Client = AmazonS3ClientBuilder.standard().withCredentials(new EnvironmentVariableCredentialsProvider()).build();
 
-		
 		ObjectMetadata metadata = new ObjectMetadata();
 		metadata.setContentType("image/jpeg");
 		

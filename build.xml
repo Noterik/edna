@@ -30,7 +30,7 @@
 	</target>
 
 	<target name="compile" depends="init">
-	  <javac srcdir="${src.dir}" destdir="${classes.dir}" debug="on">
+	  <javac srcdir="${src.dir}" destdir="${classes.dir}" target="1.7" source="1.7" debug="on">
 	    <classpath>
 	        <path refid="classpath"/>
 	    </classpath>
@@ -91,8 +91,8 @@
 				<exclude name="WEB-INF/lib/mojo.jar"/>
 				<exclude name="WEB-INF/lib/org.osgi.core-4.0.0.jar"/>
 				<exclude name="WEB-INF/lib/org.restlet.*"/>
-				<exclude name="WEB-INF/lib/aws-java-sdk-1.11.220.jar"/>
-				<exclude name="WEB-INF/lib/metadata-extractor-2.9.1.jar"/>
+				<exclude name="WEB-INF/lib/aws-java-*"/>
+				<exclude name="WEB-INF/lib/metadata-*"/>
 				<exclude name="WEB-INF/lib/xmpcore-5.1.2.jar.jar"/>
 			</fileset>
 		</war>
